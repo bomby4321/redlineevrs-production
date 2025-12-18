@@ -1,9 +1,15 @@
 import express from "express";
 import fetch from "node-fetch";
-import cors from "cors"; // <- install this
+import cors from "cors"; 
 
+import dotenv from "dotenv";
+import { scheduleBooking } from "./api/schedule-booking.js";
+
+dotenv.config();
 const app = express();
 const PORT = 3001;
+
+app.use(express.json());
 
 // Enable CORS
 app.use(cors());
@@ -76,6 +82,13 @@ app.get("/travel-time", async (req, res) => {
   }
 });
 
+// Scheduling route (AI-powered)
+app.post("/schedule-booking", scheduleBooking);
+
+
+// ---- Single listener ----
 app.listen(PORT, "0.0.0.0", () =>
-  console.log(`Travel-time server running on http://localhost:${PORT}`)
+  console.log(`server running on http://localhost:${PORT}`)
 );
+
+
