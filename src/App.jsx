@@ -56,13 +56,14 @@ import { subtractTime, findNextAvailableTime } from "./utils/helper.js";
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import CustomToolbar from "./components/CustomToolbar";
+import { buildCalendarEvents } from "./utils/calendar.js";
 
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
 
 import { formatPhone, normalizeFlightNumber, formatDateDisplay, formatTimeDisplay, formatLocalDate, formatDuration } from "./utils/formatting";
 import { STEPS, AIRPORT, US_STATES} from "./utils/constants";
-import { buildCalendarEvents } from "@/utils/calendar";
+
 
 import { calculateTripDetails, computeTripDetails, submitTrip, fetchTrips, saveCustomer, saveAddress, saveTrip } from './utils/api';
 
