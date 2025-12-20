@@ -1,5 +1,5 @@
 
-import { fetchTrips } from "@/utils/api";
+import { fetchTrips } from "./utils/api.js";
 import { addMinutes, parseISO } from "date-fns";
 
 
