@@ -62,7 +62,8 @@ import enUS from 'date-fns/locale/en-US';
 
 import { formatPhone, normalizeFlightNumber, formatDateDisplay, formatTimeDisplay, formatLocalDate, formatDuration } from "./utils/formatting";
 import { STEPS, AIRPORT, US_STATES} from "./utils/constants";
-import { supabase } from "./utils/client";
+import { buildCalendarEvents } from "@/utils/calendar";
+
 import { calculateTripDetails, computeTripDetails, submitTrip, fetchTrips, saveCustomer, saveAddress, saveTrip } from './utils/api';
 
 //import { saveCustomer, saveAddress, saveTrip } from "./supabase/api";
@@ -209,6 +210,17 @@ useEffect(() => {
 
   loadUnavailable();
 }, [formData.pickupDate]);
+
+
+useEffect(() => {
+  async function loadCalendar() {
+    const calendarEvents = await buildCalendarEvents(currentDate);
+    setEvents(calendarEvents);
+    setSelectedEvent(null);
+  }
+
+  loadCalendar();
+}, [currentDate]);
 
 
 const handleAddressNext = async () => {
@@ -563,6 +575,14 @@ async function handleSubmit() {
               </div>
 
               <FloatingInput
+                type="text"
+                label="Flight Number (Ex: DL101)"
+                value={formData.flightNumber}
+                onChange={(e) =>setFormData((prev) => ({ ...prev, flightNumber: normalizeFlightNumber(e.target.value) }))}
+                className="w-full p-4 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none"
+              />
+
+              <FloatingInput
                 type="date"
                 label="Pickup Date"
                 value={formData.pickupDate || ""}
@@ -577,7 +597,7 @@ async function handleSubmit() {
                 className="w-full p-4 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none"
               />
 
-              <FloatingInput
+              {/*<FloatingInput
                 type="time"
                 label="Pickup Time"
                 value={formData.pickupTime || ""}
@@ -590,7 +610,7 @@ async function handleSubmit() {
               <div className="bg-[var(--card-bg)] border border-gray-600 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-500">Estimated Arrival Time</p>
                 <p className="text-lg font-semibold">{calculatedArrivalTime}</p>
-              </div>
+              </div>*/}
 
 
             </div>
@@ -611,8 +631,8 @@ async function handleSubmit() {
                     : "bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white"
                 }`}
                 disabled={
-                  !formData.pickupDate ||
-                  !formData.pickupTime
+                  !formData.flightNumber.trim() ||
+                  !formData.pickupDate
                 }
                 onClick={() => setStep(6)} // later goes to Step 3
               >
@@ -684,98 +704,79 @@ async function handleSubmit() {
         )}
 
 
-        {step === 5 && formData.timeConflict &&(
+        {step === 5 && (
           <div className="flex flex-col justify-between p-6 card w-full">
-
             <h2 className="text-2xl font-bold text-center mb-6">
-              Select Pickup Time ({step - 1}/{STEPS})
+              Date and Time Booking ({step - 1}/{STEPS})
             </h2>
-            <div className="mb-4 p-4 rounded-lg bg-red-900/40 border border-red-700">
-              <p className="text-red-300 font-semibold text-center">
-                ⚠️ The time you selected conflicts with another booking.
-              </p>
-            </div>
 
-            <div className="mb-4 p-4 rounded-lg bg-gray-800 border border-gray-600">
-              <p className="text-gray-400 text-sm">Your selected pickup:</p>
-              <p className="text-white font-semibold text-lg">
-                {formatDateDisplay(formData.pickupDate)} at {formatTimeDisplay(formData.pickupTime)}
-              </p>
-              {travelMinutes && (
-                <p className="text-gray-400 text-sm mt-1">
-                  Estimated travel time: <span className="text-white font-semibold">{formData.tripDuration ? formatDuration(formData.tripDuration) : "-"}</span>
-                </p>
+            <div className="form-section">
+              {localizer && Array.isArray(events) ? (
+                <Calendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: 500 }}
+                  views={["day"]}
+                  defaultView="day"
+                  date={new Date(currentDate + "T00:00:00")}
+                  toolbar={true}
+                  components={{
+                    toolbar: CustomToolbar,
+                  }}
+                  step={15}
+                  //timeslots={4}
+                  selectable
+                  onSelectEvent={(event) => {
+                    if (event.resource === "available") {
+                      setSelectedEvent(event);
+                      setPickupTime(format(event.start, "HH:mm"));
+                    }
+                  }}
+                  onNavigate={(newDate) => {
+                    const dateStr =
+                      newDate instanceof Date
+                        ? newDate.toISOString().split("T")[0]
+                        : newDate;
+                    setCurrentDate(dateStr);
+                  }}
+
+                  /** ⭐ NEW — add colors + disable unavailable clicks */
+                  eventPropGetter={(event) => {
+                    if (event.resource === "blocked") {
+                      return {
+                        style: {
+                          backgroundColor: "#d1d5db",     // Tailwind gray-300
+                          opacity: 0.6,
+                          pointerEvents: "none",         // ⛔ non-clickable
+                          color: "#6b7280",              // gray-500 text
+                          border: "1px solid #9ca3af",
+                        },
+                      };
+                    }
+
+                    if (event.resource === "available") {
+                      return {
+                        style: {
+                          backgroundColor: "var(--accent-color)",      // your site’s accent
+                          color: "#ffffff",
+                          border: "1px solid var(--accent-hover)",     // darker accent
+                          fontWeight: "600",
+                        },
+                      };
+                    }
+
+                    return {};
+                  }}
+                />
+
+              ) : (
+                <p className="text-center text-gray-400">Loading calendar...</p>
               )}
             </div>
 
-            {/* ============================
-                Conflict Checking + Suggestions
-            ============================== */}
-            
-                
-
-              <div className="mt-4 p-4 rounded-lg bg-[var(--card-bg)] border border-gray-600">
-                <p className="text-gray-300 mb-2">Closest available times:</p>
-                <div className="space-y-2">
-                  {formData.suggestedTimes.map((t, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setFormData(prev => ({
-                        ...prev,
-                        //pickupDate: t.toISOString().split("T")[0],
-                        pickupDate: formatLocalDate(t),
-                        pickupTime: format(t, "HH:mm"),
-                        timeConflict: false
-                      }))}
-                      className="w-full py-2 rounded-lg bg-[var(--accent-color)] text-white hover:bg-[var(--accent-hover)] transition"
-                    >
-                      {t.toLocaleDateString()} {format(t, "h:mm a")}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6">
-                <p className="text-gray-300 mb-2 font-medium">Or set a different pickup date and time:</p>
-                <div className="mt-6 flex flex-col gap-2">
-                  <FloatingInput
-                    type="date"
-                    label="Pickup Date"
-                    value={formData.newPickupDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, newPickupDate: e.target.value }))}
-                    className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:border-[var(--accent-color)]"
-                  />
-                  <FloatingInput
-                    type="time"
-                    label="Pickup Time"
-                    value={formData.newPickupTime}
-                    onChange={(e) => {
-                      const newTime = e.target.value;
-                      const pickupDateTime = new Date(`${formData.newPickupDate}T${newTime}:00`);
-                      const result = findNextAvailableTime(
-                        pickupDateTime,
-                        travelMinutes.durationMinutes,
-                        formData.unavailableBlocks
-                      );
-                      setFormData(prev => ({
-                        ...prev,
-                        newPickupTime: newTime,
-                        timeConflict: !result.ok,
-                        suggestedTimes: result.ok ? [] : result.alternatives
-                      }));
-                    }}
-                    className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:border-[var(--accent-color)]"
-                  />
-                </div>
-              </div>
-
-                
-               
-             
-
-            {/* ============================
-                Actions
-            ============================== */}
-            <div className="w-full max-w-md mx-auto flex gap-4 mt-10">
+            <div className="w-full max-w-md mx-auto flex gap-4 mt-4">
               <button
                 onClick={() => setStep(4)}
                 className="flex-1 py-3 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition"
@@ -784,51 +785,16 @@ async function handleSubmit() {
               </button>
 
               <button
-                onClick={async () => {
-                  // 1. Choose the correct date/time, giving priority to the new ones
-                  const finalPickupDate = formData.newPickupDate || formData.pickupDate;
-                  const finalPickupTime = formData.newPickupTime || formData.pickupTime;
-
-                  if (!finalPickupTime) return;
-
-                  // 2. Build the Date() from the chosen values
-                  const pickupDateTime = new Date(`${finalPickupDate}T${finalPickupTime}:00`);
-
-                  // 3. Run conflict check
-                  const result = findNextAvailableTime(
-                    pickupDateTime,
-                    travelMinutes.durationMinutes,
-                    formData.unavailableBlocks
-                  );
-
-                  if (result.ok) {
-                    // 4. Save the final values into the real pickup fields
-                    setFormData(prev => ({
-                      ...prev,
-                      pickupDate: finalPickupDate,
-                      pickupTime: finalPickupTime,
-                      timeConflict: false
-                    }));
-                    setStep(6);
-                  } else {
-                    // Still a conflict → show suggestions again
-                    setFormData(prev => ({
-                      ...prev,
-                      suggestedTimes: result.alternatives,
-                      timeConflict: true
-                    }));
-                    setStep(5);
-                  }
-                }}
+                disabled={!selectedEvent}
+                onClick={() => setStep(6)}
                 className={`flex-1 py-3 rounded-lg text-white font-semibold transition ${
-                  !formData.pickupTime && !formData.newPickupTime
+                  !selectedEvent
                     ? "bg-gray-400 cursor-not-allowed text-gray-300"
-                    : "bg-[var(--accent-color)] hover:bg-[var(--accent-hover)]"
+                    : "bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white"
                 }`}
               >
                 Next
               </button>
-
             </div>
           </div>
         )}
@@ -845,13 +811,7 @@ async function handleSubmit() {
             {/* Form Fields */}
             <div className="form-section">
 
-              <FloatingInput
-                type="text"
-                label="Flight Number (Ex: DL101)"
-                value={formData.flightNumber}
-                onChange={(e) =>setFormData((prev) => ({ ...prev, flightNumber: normalizeFlightNumber(e.target.value) }))}
-                className="w-full p-4 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none"
-              />
+              
 
               <FloatingSelect
                 type="number"
@@ -894,7 +854,7 @@ async function handleSubmit() {
 
               <button
                 disabled={
-                  !formData.flightNumber.trim() ||
+                  
                   !formData.passengerCount ||
                   formData.carryOnBags === null || formData.carryOnBags === undefined ||
                   formData.suitCases === null || formData.suitCases === undefined 

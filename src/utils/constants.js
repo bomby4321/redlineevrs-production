@@ -57,4 +57,3 @@ export const US_STATES = [
   { abbr: "WI", name: "Wisconsin" },
   { abbr: "WY", name: "Wyoming" }
 ];
-
