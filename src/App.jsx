@@ -69,6 +69,8 @@ import { calculateTripDetails, computeTripDetails, submitTrip, fetchTrips, saveC
 
 //import { saveCustomer, saveAddress, saveTrip } from "./supabase/api";
 
+import StagingBanner from './StagingBanner';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -418,10 +420,12 @@ async function handleSubmit() {
 
 
   return (
+    
     <div className="app-container">
       <div className="card">
         {step === 1 && (
           <>
+            <StagingBanner />
             <img src={logo} alt="Infamous EV Logo" className="mx-auto mb-6 w-32 h-auto" />
             <h1 className="text-4xl font-bold mb-6">Welcome</h1>
             <p className="text-lg mb-8">
