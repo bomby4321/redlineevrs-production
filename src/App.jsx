@@ -164,6 +164,14 @@ function App() {
   //const [timeConflict, setTimeConflict] = useState(true);
   const [draftData, setDraftData] = useState({});
 
+  const getTomorrowDateString = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  };
+
+  const [currentDate, setCurrentDate] = useState(getTomorrowDateString());
+  
 // Handle moving to next step
 const handleNext = () => {
   if (selection !== "select") {
