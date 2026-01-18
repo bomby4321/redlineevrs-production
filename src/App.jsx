@@ -163,6 +163,8 @@ function App() {
   //const [unavailableBlocks, setUnavailableBlocks] = useState([]);
   //const [timeConflict, setTimeConflict] = useState(true);
   const [draftData, setDraftData] = useState({});
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const getTomorrowDateString = () => {
     const d = new Date();
@@ -171,7 +173,7 @@ function App() {
   };
 
   const [currentDate, setCurrentDate] = useState(getTomorrowDateString());
-  
+
 // Handle moving to next step
 const handleNext = () => {
   if (selection !== "select") {
@@ -647,7 +649,7 @@ async function handleSubmit() {
                   !formData.flightNumber.trim() ||
                   !formData.pickupDate
                 }
-                onClick={() => setStep(6)} // later goes to Step 3
+                onClick={() => setStep(5)}
               >
                 Next
               </button>
