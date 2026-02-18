@@ -8,7 +8,7 @@ export const getTravelTime = async (origin, destination) => {
   //console.log("getTravelTime called with:", origin);
   try {
     const res = await fetch(
-      `${API_URL}/travel-time?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
+      `${API_URL}/api/travel-time?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
     );
     const data = await res.json();
     return {
