@@ -14,7 +14,7 @@ app.use(express.json());
 // Enable CORS
 app.use(cors());
 
-app.get("/travel-time", async (req, res) => {
+app.get("/api/travel-time", async (req, res) => {
   const { origin, destination } = req.query;
 
   if (!origin || !destination) return res.status(400).json({ error: "Missing origin or destination" });

@@ -435,7 +435,7 @@ async function handleSubmit() {
       <div className="card">
         {step === 1 && (
           <>
-            <StagingBanner />
+            {/*<StagingBanner />*/}
             <img src={logo} alt="Infamous EV Logo" className="mx-auto mb-6 w-32 h-auto" />
             <h1 className="text-4xl font-bold mb-6">Welcome</h1>
             <p className="text-lg mb-8">
